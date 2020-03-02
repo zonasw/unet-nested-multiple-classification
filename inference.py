@@ -77,9 +77,6 @@ def get_args():
     parser.add_argument('--mask-threshold', '-t', type=float,
                         help="Minimum probability value to consider a mask pixel white",
                         default=0.5)
-    parser.add_argument('--scale', '-s', type=float,
-                        help="Scale factor for the input images",
-                        default=0.5)
 
     return parser.parse_args()
 
@@ -92,7 +89,7 @@ def mask_to_image(mask, idx):
 if __name__ == "__main__":
     args = get_args()
 
-    input_imgs = os.listdir(args.input)[:20]
+    input_imgs = os.listdir(args.input)
 
     if cfg.deepsupervision:
         net = eval(cfg.model)(cfg)
@@ -116,7 +113,7 @@ if __name__ == "__main__":
 
         mask = inference_one(net=net,
                              image=img,
-                             scale_factor=args.scale,
+                             scale_factor=cfg.scale,
                              out_threshold=args.mask_threshold,
                              device=device)
         img_name_no_ext = osp.splitext(img_name)[0]
