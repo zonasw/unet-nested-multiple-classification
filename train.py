@@ -150,19 +150,23 @@ def train_net(net, cfg):
 
                     writer.add_images('images', batch_imgs, global_step)
                     if cfg.n_classes == 1:
+                        if cfg.deepsupervision:
+                            inference_mask = inference_masks[-1]
                         # writer.add_images('masks/true', batch_masks, global_step)
-                        inference_image = torch.sigmoid(inference_masks) > 0.5
+                        inference_mask = torch.sigmoid(inference_mask) > 0.5
                         writer.add_images('masks/inference',
-                                          inference_image,
+                                          inference_mask,
                                           global_step)
                     else:
                         # writer.add_images('masks/true', batch_masks, global_step)
+                        if cfg.deepsupervision:
+                            inference_masks = inference_masks[-1]
                         ids = inference_masks.shape[1]
-                        inference_images = torch.chunk(inference_masks, ids, dim=1)
-                        for idx in range(0, len(inference_images)):
-                            inference_image = torch.sigmoid(inference_images[idx]) > 0.5
+                        inference_masks = torch.chunk(inference_masks, ids, dim=1)
+                        for idx in range(0, len(inference_masks)):
+                            inference_mask = torch.sigmoid(inference_masks[idx]) > 0.5
                             writer.add_images('masks/inference_'+str(idx),
-                                              inference_image,
+                                              inference_mask,
                                               global_step)
 
         if cfg.save_cp:
