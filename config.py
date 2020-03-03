@@ -15,6 +15,7 @@ class UNetConfig:
                  epochs = 100,  # Number of epochs
                  batch_size = 2,    # Batch size
                  validation = 10.0,   # Percent of the data that is used as validation (0-100)
+                 out_threshold = 0.5,
 
                  optimizer='SGD',
                  lr = 0.0001,     # learning rate
@@ -44,6 +45,7 @@ class UNetConfig:
         self.epochs = epochs
         self.batch_size = batch_size
         self.validation = validation
+        self.out_threshold = out_threshold
 
         self.optimizer = optimizer
         self.lr = lr
