@@ -57,13 +57,13 @@ def inference_one(net, image, device):
         if cfg.n_classes == 1:
             probs = tf(probs.cpu())
             mask = probs.squeeze().cpu().numpy()
-            return mask > out_threshold
+            return mask > cfg.out_threshold
         else:
             masks = []
             for prob in probs:
                 prob = tf(prob.cpu())
                 mask = prob.squeeze().cpu().numpy()
-                mask = mask > out_threshold
+                mask = mask > cfg.out_threshold
                 masks.append(mask)
             return masks
   
