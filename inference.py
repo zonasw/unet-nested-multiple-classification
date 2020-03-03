@@ -26,14 +26,10 @@ from config import UNetConfig
 
 cfg = UNetConfig()
 
-def inference_one(net,
-                  image,
-                  device,
-                  scale_factor=1,
-                  out_threshold=0.5):
+def inference_one(net, image, device):
     net.eval()
 
-    img = torch.from_numpy(BasicDataset.preprocess(image, scale_factor))
+    img = torch.from_numpy(BasicDataset.preprocess(image, cfg.scale))
 
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
@@ -53,17 +49,25 @@ def inference_one(net,
         tf = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                transforms.Resize(image.size[1]),
+                transforms.Resize((image.size[0], image.size[1])),
                 transforms.ToTensor()
             ]
         )
-
-        probs = tf(probs.cpu())
-        mask = probs.squeeze().cpu().numpy()
-
-    return mask > out_threshold
-
-
+        
+        if cfg.n_classes == 1:
+            probs = tf(probs.cpu())
+            mask = probs.squeeze().cpu().numpy()
+            return mask > out_threshold
+        else:
+            masks = []
+            for prob in probs:
+                prob = tf(prob.cpu())
+                mask = prob.squeeze().cpu().numpy()
+                mask = mask > out_threshold
+                masks.append(mask)
+            return masks
+  
+  
 def get_args():
     parser = argparse.ArgumentParser(description='Predict masks from input images',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -74,16 +78,7 @@ def get_args():
                         help='Directory of input images')
     parser.add_argument('--output', '-o', dest='output', type=str, default='',
                         help='Directory of ouput images')
-    parser.add_argument('--mask-threshold', '-t', type=float,
-                        help="Minimum probability value to consider a mask pixel white",
-                        default=0.5)
-
     return parser.parse_args()
-
-
-def mask_to_image(mask, idx):
-    mask = mask[idx]
-    return Image.fromarray((mask * 255).astype(np.uint8))
 
 
 if __name__ == "__main__":
@@ -91,11 +86,7 @@ if __name__ == "__main__":
 
     input_imgs = os.listdir(args.input)
 
-    if cfg.deepsupervision:
-        net = eval(cfg.model)(cfg)
-    else:
-        net = eval(cfg.model)(cfg)
-
+    net = eval(cfg.model)(cfg)
     logging.info("Loading model {}".format(args.model))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -113,8 +104,6 @@ if __name__ == "__main__":
 
         mask = inference_one(net=net,
                              image=img,
-                             scale_factor=cfg.scale,
-                             out_threshold=args.mask_threshold,
                              device=device)
         img_name_no_ext = osp.splitext(img_name)[0]
         output_img_dir = osp.join(args.output, img_name_no_ext)
@@ -124,9 +113,7 @@ if __name__ == "__main__":
             image_idx = Image.fromarray((mask * 255).astype(np.uint8))
             image_idx.save(osp.join(output_img_dir, img_name))
         else:
-            ids = mask.shape[0]
-            for idx in range(ids):
+            for idx in range(0, len(mask)):
                 img_name_idx = img_name_no_ext + "_" + str(idx) + ".png"
-                image_idx = mask_to_image(mask, idx)
+                image_idx = Image.fromarray((mask[idx] * 255).astype(np.uint8))
                 image_idx.save(osp.join(output_img_dir, img_name_idx))
-
