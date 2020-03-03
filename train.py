@@ -89,7 +89,6 @@ def train_net(net, cfg):
         criterion = LovaszLossSoftmax()
     else:
         criterion = LovaszLossHinge()
-        # criterion = nn.BCEWithLogitsLoss()
 
     for epoch in range(cfg.epochs):
         net.train()
@@ -100,7 +99,7 @@ def train_net(net, cfg):
                 batch_imgs = batch['image']
                 batch_masks = batch['mask']
                 assert batch_imgs.shape[1] == cfg.n_channels, \
-                        f'Network has been defined with {net.n_channels} input channels, ' \
+                        f'Network has been defined with {cfg.n_channels} input channels, ' \
                         f'but loaded images have {batch_imgs.shape[1]} channels. Please check that ' \
                         'the images are loaded correctly.'
 
@@ -241,15 +240,15 @@ if __name__ == '__main__':
 
     logging.info(f'Network:\n'
                  f'\t{cfg.model} model\n'
-                 f'\t{net.n_channels} input channels\n'
-                 f'\t{net.n_classes} output channels (classes)\n'
+                 f'\t{cfg.n_channels} input channels\n'
+                 f'\t{cfg.n_classes} output channels (classes)\n'
                  f'\t{"Bilinear" if net.bilinear else "Dilated conv"} upscaling')
 
     if cfg.load:
         net.load_state_dict(
             torch.load(cfg.load, map_location=device)
         )
-        logging.info(f'Model loaded from {args.load}')
+        logging.info(f'Model loaded from {cfg.load}')
 
     net.to(device=device)
     # faster convolutions, but more memory
