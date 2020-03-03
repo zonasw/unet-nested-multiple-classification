@@ -152,16 +152,16 @@ def train_net(net, cfg):
                             inference_masks = inference_masks[-1]
                     if cfg.n_classes == 1:
                         # writer.add_images('masks/true', batch_masks, global_step)
-                        inference_mask = torch.sigmoid(inference_masks) > 0.5
+                        inference_mask = torch.sigmoid(inference_masks) > cfg.out_threshold
                         writer.add_images('masks/inference',
                                           inference_mask,
                                           global_step)
                     else:
                         # writer.add_images('masks/true', batch_masks, global_step)
-                        ids = inference_masks.shape[1]
+                        ids = inference_masks.shape[1]  # N x C x H x W
                         inference_masks = torch.chunk(inference_masks, ids, dim=1)
                         for idx in range(0, len(inference_masks)):
-                            inference_mask = torch.sigmoid(inference_masks[idx]) > 0.5
+                            inference_mask = torch.sigmoid(inference_masks[idx]) > cfg.out_threshold
                             writer.add_images('masks/inference_'+str(idx),
                                               inference_mask,
                                               global_step)
@@ -195,7 +195,7 @@ def eval_net(net, loader, device, n_val, cfg):
             true_masks = batch['mask']
 
             imgs = imgs.to(device=device, dtype=torch.float32)
-            mask_type = torch.float32 if net.n_classes == 1 else torch.long
+            mask_type = torch.float32 if cfg.n_classes == 1 else torch.long
             true_masks = true_masks.to(device=device, dtype=mask_type)
 
             # compute loss
@@ -205,8 +205,8 @@ def eval_net(net, loader, device, n_val, cfg):
                 for masks_pred in masks_preds:
                     tot_cross_entropy = 0
                     for true_mask, pred in zip(true_masks, masks_pred):
-                        pred = (pred > 0.5).float()
-                        if net.n_classes > 1:
+                        pred = (pred > cfg.out_threshold).float()
+                        if cfg.n_classes > 1:
                             sub_cross_entropy = F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)).item()
                         else:
                             sub_cross_entropy = dice_coeff(pred, true_mask.squeeze(dim=1)).item()
@@ -216,8 +216,8 @@ def eval_net(net, loader, device, n_val, cfg):
             else:
                 masks_pred = net(imgs)
                 for true_mask, pred in zip(true_masks, masks_pred):
-                    pred = (pred > 0.5).float()
-                    if net.n_classes > 1:
+                    pred = (pred > cfg.out_threshold).float()
+                    if cfg.n_classes > 1:
                         tot += F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)).item()
                     else:
                         tot += dice_coeff(pred, true_mask.squeeze(dim=1)).item()
@@ -233,16 +233,12 @@ if __name__ == '__main__':
     # device = torch.device('cpu')
     logging.info(f'Using device {device}')
 
-    if cfg.deepsupervision:
-        net = eval(cfg.model)(cfg)
-    else:
-        net = eval(cfg.model)(cfg)
-
+    net = eval(cfg.model)(cfg)
     logging.info(f'Network:\n'
                  f'\t{cfg.model} model\n'
                  f'\t{cfg.n_channels} input channels\n'
                  f'\t{cfg.n_classes} output channels (classes)\n'
-                 f'\t{"Bilinear" if net.bilinear else "Dilated conv"} upscaling')
+                 f'\t{"Bilinear" if cfg.bilinear else "Dilated conv"} upscaling')
 
     if cfg.load:
         net.load_state_dict(
