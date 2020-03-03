@@ -101,7 +101,7 @@ def train_net(net, cfg):
                 batch_masks = batch['mask']
                 assert batch_imgs.shape[1] == cfg.n_channels, \
                         f'Network has been defined with {net.n_channels} input channels, ' \
-                        f'but loaded images have {imgs.shape[1]} channels. Please check that ' \
+                        f'but loaded images have {batch_imgs.shape[1]} channels. Please check that ' \
                         'the images are loaded correctly.'
 
                 batch_imgs = batch_imgs.to(device=device, dtype=torch.float32)
