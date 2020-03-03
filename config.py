@@ -34,7 +34,7 @@ class UNetConfig:
 
                  model='NestedUNet',
                  bilinear = True,
-                 deepsupervision = False,
+                 deepsupervision = True,
                  ):
         super(UNetConfig, self).__init__()
 
