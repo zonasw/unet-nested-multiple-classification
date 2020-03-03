@@ -49,7 +49,7 @@ def inference_one(net, image, device):
         tf = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                transforms.Resize((image.size[0], image.size[1])),
+                transforms.Resize((image.size[1], image.size[0])),
                 transforms.ToTensor()
             ]
         )
