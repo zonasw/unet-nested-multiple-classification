@@ -37,6 +37,10 @@ python train.py
 ```base
 python inference.py -m ./data/checkpoints/epoch_10.pth -i ./data/test/input -o ./data/test/output
 ```
+If you want to highlight your mask with color, you can
+```bash
+python inference_color.py -m ./data/checkpoints/epoch_10.pth -i ./data/test/input -o ./data/test/output
+```
 
 ## Tensorboard
 You can visualize in real time the train and val losses, along with the model predictions with tensorboard:
